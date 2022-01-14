@@ -21,22 +21,24 @@ To cite this repo, please reference the name "OpenVHead" with the project link [
 ## 2. Prerequisite
 
 ### 2.1 Hardware
+
 - PC
 - RGB camera (compatible with both built-in webcam and external USB camera)
 
 ### 2.2 Software
 #### 2.2.1 Environment
-- Windows system
-- Python 3.6.x
-- Unity 2018.4.x
+- Windows/macOS system
+- Python 3.9.x
+- Unity 2020.3.x
 #### 2.2.2 Package dependencies
-- opencv-python (tested with version 3.4.0)
-- dlib (tested with version 19.7.0)
+- opencv-python (tested with version 4.5,5,62)
+- dlib (tested with version 19.22.1)
 
 
 ## 3. Usage
 ### 3.1 Quick start
-1. Configure the environment. You may use pip to install the required packages. The .whl file of opencv-python 3.4.0 and dlib 19.7.0 packages can be downloaded from [here](https://pypi.org/project/opencv-python/3.4.0.12/#files) and [here](https://pypi.org/project/dlib/19.7.0/#files). Note that you should choose the appropriate version. For example, if you are using python 3.6 on Windows x64 system, then download the "xxxx-cp36-cp36m-win_amd64.whl" version.
+
+1. Configure the environment. You may use pip to install the required packages.
 
 2. Clone the repository to your workspace. You can also download the .zip file of the [latest release](https://github.com/TianxingWu/OpenVHead/releases/latest) or older versions from [Release](https://github.com/TianxingWu/OpenVHead/releases).
 
@@ -48,7 +50,7 @@ To cite this repo, please reference the name "OpenVHead" with the project link [
 
 6. Press the "Start Thread" button on the UI to start the C# socket server. An output window should pop up and the Python client would start to communicate with the sever. Now the Python script would be running in the background to extract features from the video stream captured by camera and send them to Unity. The virtual character comes to life!
 
-7. Press the Play button again to stop the program. It's not recommended to press the "Stop Thread" button since it seems to cause bugs from time to time. 
+7. Press the Play button again to stop the program. It's not recommended to press the "Stop Thread" button since it seems to cause bugs from time to time.
 
 ### 3.2 Model selection
 This system now has two character models with customized parameter settings. To change the character model, select the corresponding GameObject in the Scene hierarchy and unhide it by clicking on the toggle next to the object's name in the inspector, while the other GameObject should be hide. For example, if you want to change from model 1 to model 2, the settings should look like this:
@@ -157,7 +159,7 @@ The core idea is to define a reference distance which is insensitive to the rota
 After the position, rotation and feature vectors are got at the Python front-end, they are then transferred to the C# back-end through socket, which is described in [4.3](#43-Socket-communication). With this collection of information, several steps are taken here to actually make the virtual character move up properly. The implementation details are slightly different between the two models. Most of time I will only take the model 2 as the example because it has more generality.
 
 #### 4.2.1 Pose control
-In fact, theoretically you can directly apply the estimated position vector and rotation quaternions to the model if you use something like model 1 (pure head). However, since I haven't implemented inverse kinematics to the more generalized model like model 2, for these models the position is fixed, which means you can only control the rotation of it. 
+In fact, theoretically you can directly apply the estimated position vector and rotation quaternions to the model if you use something like model 1 (pure head). However, since I haven't implemented inverse kinematics to the more generalized model like model 2, for these models the position is fixed, which means you can only control the rotation of it.
 
 Furthermore, since the setting of world coordinate system are different in OpenCV and in Unity, a new, fixed **rotation transformation** is applied to the quaternions. I'll just leave the formula of the quaternion multiplication alone for simplification.
 
@@ -217,15 +219,15 @@ More details of the implementation can be referred to [ParameterServer.cs](/Asse
 ##### 4.2.2.2 Blend shape functions
 To make the facial expression of the virtual character more realistic, I write customized deformation functions for the blend shapes of model 2: **Blinking function**, **Shocked function** and **Mouth deformation function**. Since the function may vary according to the specific model, I'll just list the most representative and important one here, which is the eyes' **Blinking function**. It has two versions at present.
 
-| Version 1: A parameterized sigmoid function | Version 2: A piecewise function |
-| --- | --- |
-| ![](./Figures/blinking_function_2.png) | ![](./Figures/blinking_function_1.png) |
+| Version 1: A parameterized sigmoid function                                                                                                                                                    | Version 2: A piecewise function                                                                                                                                                                                                                                                                                      |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ![](./Figures/blinking_function_2.png)                                                                                                                                                         | ![](./Figures/blinking_function_1.png)                                                                                                                                                                                                                                                                               |
 | <p align="center"><img alt="$$w=100-\frac{100}{1+\text{e}^{-500(m-0.12)}}$$" src="Formulas/0ad0af5d467e3e7f6c38c38da27d7162.svg" align="middle" width="202.99455pt" height="34.654785pt"/></p> | <p align="center"><img alt="$$w=\left\{\begin{matrix}100\quad &amp;m&lt;0.05\\ 5/m \quad &amp;0.05\le m\le 0.1\\ 100-500/m \quad &amp;0.01\le m\le 0.2\\ 0 \quad &amp;m\ge 0.2\end{matrix}\right.$$" src="Formulas/a97dd0fe181bc0003d9ee38333807ce9.svg" align="middle" width="282.1731pt" height="78.90498pt"/></p> |
 
 Where <img alt="$m$" src="Formulas/0e51a2dede42189d77627c4d742822c3.svg" align="middle" width="14.433210000000003pt" height="14.155350000000013pt"/> is the processed measurement; <img alt="$w$" src="Formulas/31fae8b8b78ebe01cbfbe2fe53832624.svg" align="middle" width="12.210990000000004pt" height="14.155350000000013pt"/> is the weight applied to the blend shape controller, ranging from 0 (no deformation) to 100 (max deformation).
 
 ##### 4.2.2.3 A little trick:
-When tuning the parameters, there is always a contradiction between robustness and sensitivity. Especially when controlling the shape of the eye, it is reasonable to keep it smooth, which requires a longer response time, but that would also make the detection of blinking more challenging. To solve this problem, I use a small trick here. 
+When tuning the parameters, there is always a contradiction between robustness and sensitivity. Especially when controlling the shape of the eye, it is reasonable to keep it smooth, which requires a longer response time, but that would also make the detection of blinking more challenging. To solve this problem, I use a small trick here.
 
 - **In the dynamic system part:** While keep the system as smooth as you can, **force** the "position", that is, the measure, **to be zero** when the original measure is lower than a pre-set threshold.
 - **In the blend shape part:** Use the same threshold as the upper bound for 100 weight (eye fully closed).
@@ -247,8 +249,8 @@ The socket endpoint is set at:
 
 
 ## 5. Known Issues
-- Sometimes the Python script running in the background could fail to terminate after releasing the Play button. If this happens, navigate to the "Output" window (the one that contains your face) and press 'ESC', and the thread would be stopped manually. 
-- The performance may depend on the hardware you use. This program runs perfectly on my current laptop with i7-9750H CPU and RTX 2060 GPU, but it runs quite slow when tested on my old laptop with i7-6500U CPU and AMD Radeon R7 M360 GPU (bought in 2016). I'm not sure about the minimum system requirements at present. Please create an issue with your hardware condition if you encounter similar problems. 
+- Sometimes the Python script running in the background could fail to terminate after releasing the Play button. If this happens, navigate to the "Output" window (the one that contains your face) and press 'ESC', and the thread would be stopped manually.
+- The performance may depend on the hardware you use. This program runs perfectly on my current laptop with i7-9750H CPU and RTX 2060 GPU, but it runs quite slow when tested on my old laptop with i7-6500U CPU and AMD Radeon R7 M360 GPU (bought in 2016). I'm not sure about the minimum system requirements at present. Please create an issue with your hardware condition if you encounter similar problems.
 
 ## 6. Acknowledgement
 The overall structure of the head pose estimation part is adapted from [Head Pose Estimation using OpenCV and Dlib](https://www.learnopencv.com/head-pose-estimation-using-opencv-and-dlib/) by Satya Mallick and [this blog](https://blog.csdn.net/yuanlulu/article/details/82763170) by yuanlulu.
