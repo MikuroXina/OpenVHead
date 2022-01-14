@@ -15,12 +15,12 @@ public class SocketServer : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        Application.runInBackground = true;      
+        Application.runInBackground = true;
     }
 
     public static void Execute(string command)// Execute cmd command
     {
-        var processInfo = new System.Diagnostics.ProcessStartInfo("cmd.exe", "/S /C " + command)
+        var processInfo = new System.Diagnostics.ProcessStartInfo(command)
         {
             CreateNoWindow = true,
             UseShellExecute = true,
@@ -35,8 +35,8 @@ public class SocketServer : MonoBehaviour
         SocketThread = new System.Threading.Thread(NetworkCode);
         SocketThread.IsBackground = true;
         SocketThread.Start();
-        
-        Execute("cd PythonScript & python visual_measurement.py");// Execute python client script
+
+        Execute("PythonScript/visual_measurement.py");// Execute python client script
     }
 
 
@@ -65,7 +65,7 @@ public class SocketServer : MonoBehaviour
         listener = new Socket(ipArray[0].AddressFamily,
             SocketType.Stream, ProtocolType.Tcp);
 
-        // Bind the socket to the local endpoint and 
+        // Bind the socket to the local endpoint and
         // listen for incoming connections.
 
         try
@@ -100,7 +100,7 @@ public class SocketServer : MonoBehaviour
                     }
 
                     data = Encoding.ASCII.GetString(bytes, 0, bytesRec);
-                    
+
                     string[] tempdata = data.Split(':');
 
                     if (data.IndexOf("<EOF>") > -1)
